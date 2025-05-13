@@ -8,12 +8,23 @@
 #
 { if ( ( $kernel ) && ( !$pygrub) && ( !$pvgrub) )
   {
-    $OUT .= "kernel      = '$kernel'\n";
+    $OUT .= "kernel = '$kernel'\n";
   }
 }
 { if ( ( $initrd ) && ( !$pygrub) && ( !$pvgrub) )
   {
-    $OUT.= "ramdisk     = '$initrd'";
+    $OUT.= "ramdisk = '$initrd'";
+  }
+}
+{ if ( ( $kernel ) && ( !$pygrub) && ( !$pvgrub) )
+  {
+    for ( my $i = $#PARTITIONS; $i >= 0 ; $i-- )
+    {
+      if ( $PARTITIONS[$i]{'mountpoint'} eq '/' )
+      {
+          $OUT .= "cmdline = '/dev/$PARTITIONS[$i]{'vdev'} ro'\n";
+      }
+    }
   }
 }
 {
@@ -24,51 +35,48 @@
     $OUT .= "bootloader = 'pygrub'\n";
   }
 }
-vcpus       = '{$vcpus}'
-memory      = '{$memory}'
+vcpus = '{$vcpus}'
+memory = '{$memory}'
 { if ( $maxmem )
   {
-    $OUT .= "maxmem      = '$maxmem'\n";
+    $OUT .= "maxmem = '$maxmem'\n";
   }
 }
-type      = '{$type}'
+type = '{$type}'
 
 #
 #  Disk device(s).
 #
 {
-  if ( !defined($image_vbd ) )
+  $OUT .= "disk = [\n";
+  for ( my $i = $#PARTITIONS; $i >= 0 ; $i-- )
   {
-    $OUT .= "disk        = [\n";
-    for ( my $i = $#PARTITIONS; $i >= 0 ; $i-- )
-    {
-       if ( $PARTITIONS[$i]{'mountpoint'} eq '/' )
-       {
-           $OUT .= "                  'vdev=$PARTITIONS[$i]{'vdev'}, target=$PARTITIONS[$i]{'image'}',\n";
-       }
-    }
-    for ( my $i = $#PARTITIONS; $i >= 0 ; $i-- )
-    {
-       if ( $PARTITIONS[$i]{'mountpoint'} ne '/' )
-       {
-           $OUT .= "                  'vdev=$PARTITIONS[$i]{'vdev'}, target=$PARTITIONS[$i]{'image'}',\n";
-       }
-    }
-    $OUT .= "              ]\n";
+      if ( $PARTITIONS[$i]{'mountpoint'} eq '/' )
+      {
+          $OUT .= "                  'vdev=$PARTITIONS[$i]{'vdev'}, target=$PARTITIONS[$i]{'image'}',\n";
+      }
   }
+  for ( my $i = $#PARTITIONS; $i >= 0 ; $i-- )
+  {
+      if ( $PARTITIONS[$i]{'mountpoint'} ne '/' )
+      {
+          $OUT .= "                  'vdev=$PARTITIONS[$i]{'vdev'}, target=$PARTITIONS[$i]{'image'}',\n";
+      }
+  }
+  $OUT .= "              ]\n";
 }
 
 #
 #  Hostname
 #
-name        = '{$hostname}'
+name = '{$hostname}'
 
 #
 #  Networking
 #
 { if ( $dhcp )
   {
-    $OUT .= "dhcp        = 'dhcp'\n";
+    $OUT .= "dhcp = 'dhcp'\n";
 
     # Setup the mac address, if present.
     my $m = '';
@@ -88,7 +96,7 @@ name        = '{$hostname}'
         $br = "bridge=$bridge"
       }
     }
-    $OUT .= "vif         = [ '";
+    $OUT .= "vif = [ '";
     $OUT .= "$m";
     $OUT .= "$br";
     $OUT .= "' ]";
@@ -122,7 +130,7 @@ name        = '{$hostname}'
       $vl = ".$vlan"
     }
 
-    $OUT .= "vif         = [ 'ip=$ips";
+    $OUT .= "vif = [ 'ip=$ips";
     $OUT .= "$m";
     $OUT .= "$vn";
     $OUT .= "$br";

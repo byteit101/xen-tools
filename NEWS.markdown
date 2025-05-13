@@ -26,7 +26,8 @@ Other Changes
 
 BYTEIT101 CHANGES!!!!!!!!!!!!!!!!!!!!!!!!!!1
 
-* Rename xm.tmpl to xl.tmpl and use more modern settings
+* Rename xm.tmpl to xl.tmpl and use more modern settings.
+* Add PVGrub support.
 
 Other Changes
 -------------
