@@ -26,29 +26,46 @@ fi
 #
 logMessage Script $0 starting
 
-if [ "${pygrub}" = "1" ]; then
+if [ "${pvgrub}" = "1" ]; then
 
-#
-#  Install the grub 0.9x package ("grub-legacy" on Debian, "grub" on Ubuntu)
-#
-if chroot ${prefix} /usr/bin/apt-cache show grub-legacy 2>/dev/null | egrep -qi 'GRand Unified Bootloader.*Legacy'; then
-    installDebianPackage ${prefix} grub-legacy
-else
-    installDebianPackage ${prefix} grub
-fi
+    mount -o bind /proc ${prefix}/proc
+    mount -o bind /dev ${prefix}/dev
+    #
+    #  Install the grub2 xen binaries
+    #
+    installDebianPackage ${prefix} grub-xen
 
-if [ ! -e ${prefix}/boot/grub/default ]; then
-    echo default > ${prefix}/boot/grub/default
-fi
-mount -o bind /proc ${prefix}/proc
-mount -o bind /dev ${prefix}/dev
-chroot ${prefix} /usr/sbin/update-grub
-umount ${prefix}/proc
-umount ${prefix}/dev
+    chroot ${prefix} /usr/sbin/update-grub2
+    umount ${prefix}/proc
+    umount ${prefix}/dev
 
 else
-    logMessage "pygrub not set, skipping grub-legacy installation"
-fi # if pygrub
+    logMessage "pvgrub not set, skipping grub2 installation"
+
+    if [ "${pygrub}" = "1" ]; then
+
+        #
+        #  Install the grub 0.9x package ("grub-legacy" on Debian, "grub" on Ubuntu)
+        #
+        if chroot ${prefix} /usr/bin/apt-cache show grub-legacy 2>/dev/null | egrep -qi 'GRand Unified Bootloader.*Legacy'; then
+            installDebianPackage ${prefix} grub-legacy
+        else
+            installDebianPackage ${prefix} grub
+        fi
+
+        if [ ! -e ${prefix}/boot/grub/default ]; then
+            echo default > ${prefix}/boot/grub/default
+        fi
+        mount -o bind /proc ${prefix}/proc
+        mount -o bind /dev ${prefix}/dev
+        chroot ${prefix} /usr/sbin/update-grub
+        umount ${prefix}/proc
+        umount ${prefix}/dev
+
+    else
+        logMessage "pygrub not set, skipping grub-legacy installation"
+    fi # if pygrub
+fi # if pvgrub
 
 #
 #  Log our finish

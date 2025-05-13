@@ -6,19 +6,21 @@
 #
 #  Kernel + memory size
 #
-{ if ( ( $kernel ) && ( !defined($pygrub)) )
+{ if ( ( $kernel ) && ( !$pygrub) && ( !$pvgrub) )
   {
     $OUT .= "kernel      = '$kernel'\n";
   }
 }
-{ if ( ( $initrd ) && ( !defined($pygrub)) )
+{ if ( ( $initrd ) && ( !$pygrub) && ( !$pvgrub) )
   {
     $OUT.= "ramdisk     = '$initrd'";
   }
 }
 {
-  if ( $pygrub )
+  if ( $pvgrub )
   {
+    $OUT .= "kernel = '$pvgrub_path'\n";
+  } elsif ( $pygrub ) {
     $OUT .= "bootloader = 'pygrub'\n";
   }
 }
@@ -127,14 +129,6 @@ name        = '{$hostname}'
     $OUT .= "' ]";
   }
 }
-
-#
-#  Behaviour
-#
-#on_poweroff = 'destroy'
-#on_reboot   = 'restart'
-#on_crash    = 'restart'
-
 
 { if ( $admins )
   {

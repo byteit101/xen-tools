@@ -69,6 +69,20 @@ noMentionOf( "hda",
              memory => 128, ips => '192.168.1.1', dir => '/tmp' );
 
 
+
+#
+#  Boot options:
+#
+testOutputContains( "kernel = 'my-pvh.bin'",
+                    memory => 128, dhcp => 1, dir => '/tmp', pvgrub => 1, pvgrub_path => 'my-pvh.bin');
+noMentionOf( "pygrub",
+             memory => 128, ips => '192.168.1.1', dir => '/tmp' , pvgrub => 1, pvgrub_path => 'my-pvh.bin' );
+
+testOutputContains( "bootloader = 'pygrub'",
+                    memory => 128, dhcp => 1, dir => '/tmp', pygrub => 1);
+noMentionOf( "kernel",
+             memory => 128, ips => '192.168.1.1', dir => '/tmp' , pygrub => 1 );
+
 #
 #  IDE based systems
 #
