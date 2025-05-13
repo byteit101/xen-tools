@@ -24,6 +24,16 @@ Other Changes
   (effective) values in xen-tools.conf: ext3 → ext4
 
 
+BYTEIT101 CHANGES!!!!!!!!!!!!!!!!!!!!!!!!!!1
+
+* Rename xm.tmpl to xl.tmpl and use more modern settings
+
+Other Changes
+-------------
+
+* Remove useless tests.
+
+
 xen-tools 4.9.2 (released 06 Feb 2023)
 ======================================
 

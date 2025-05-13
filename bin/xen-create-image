@@ -536,7 +536,7 @@ Create a Xen configuration file in so that xm/xl can start the new domain.
  you may change the output directory with the --output flag.
 
   The configuration file is built up using the template file
- /etc/xen-tools/xm.tmpl - which is a file processed via
+ /etc/xen-tools/xl.tmpl - which is a file processed via
  the Text::Template perl module.
 
   If you wish to modify the files which are generated please make your
@@ -2994,7 +2994,7 @@ sub createLoopbackImages
         #
         # Save the image path to the partitions array
         #
-        $partition->{ 'imagetype' } = 'file:';
+        $partition->{ 'imagetype' } = 'file';
         $partition->{ 'image' }     = $disk;
 
         #
@@ -3107,7 +3107,7 @@ sub usePhysicalDevice
                  'type'       => 'swap',
                  'mountpoint' => '',
                  'options'    => '',
-                 'imagetype'  => 'phy:',
+                 'imagetype'  => 'phy',
                  'image'      => $swap_img
               } ) unless ( $CONFIG{ 'noswap' } );
     }
@@ -3128,7 +3128,7 @@ sub usePhysicalDevice
                  'type'       => $CONFIG{ 'fs' },
                  'mountpoint' => '/',
                  'options'    => $options,
-                 'imagetype'  => 'phy:',
+                 'imagetype'  => 'phy',
                  'image'      => $phys_img
               } );
     }
@@ -3227,7 +3227,7 @@ sub createLVMBits
         #
         # Save the image path to the partitions array
         #
-        $partition->{ 'imagetype' } = 'phy:';
+        $partition->{ 'imagetype' } = 'phy';
         $partition->{ 'image' }     = $lvm_disk;
 
         #
@@ -3335,7 +3335,7 @@ sub createZFSBits
         #
         # Save the image path to the partitions array
         #
-        $partition->{ 'imagetype' } = 'phy:';
+        $partition->{ 'imagetype' } = 'phy';
         $partition->{ 'image' }     = $zfs_disk;
 
         #
@@ -3468,7 +3468,7 @@ sub createEVMSBits
         #
         # Save the image path to the partitions array
         #
-        $partition->{ 'imagetype' } = 'phy:';
+        $partition->{ 'imagetype' } = 'phy';
         $partition->{ 'image' }     = $evms_disk;
 
         #
