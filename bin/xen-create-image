@@ -177,7 +177,7 @@ and EVMS EXAMPLE.
 
    --(no)pygrub DomU should (not) be booted using pygrub.
 
-   --(no)pvgrub DomU should (not) be booted using pvgrub.
+   --(no)pvgrub DomU should (not) be booted using pvgrub2.
 
    --role=role  Run the specified role script(s) post-install.  Role
                 scripts are discussed later in this manpage.  Can be
@@ -1262,7 +1262,7 @@ EOF
     }
 
     # 
-    # Determine the correct PVGrub kernel, and check it's path
+    # Determine the correct PVGrub2 kernel, and check it's path
     # 
     if (  exists(  $CONFIG{ 'pvgrub' } ) &&
          $CONFIG{ 'pvgrub' } )
@@ -1277,7 +1277,7 @@ EOF
         else {
             print <<EOF;
 
-  You've requested PVGrub on HVM. This isn't supported
+  You've requested PVGrub2 on HVM. This isn't supported
 
   Aborting.
 EOF
@@ -1287,7 +1287,7 @@ EOF
         
         unless ( -f $CONFIG{ 'pvgrub_path' } )
         {
-            logprint( "The pvgrub binary was not found. Install grub-xen-host.\nAborting\n\n" );
+            logprint( "The pvgrub2 binary was not found. Install grub-xen-host.\nAborting\n\n" );
             $CONFIG{'FAIL'} = 1;
             exit 127;
         }
@@ -1434,6 +1434,9 @@ sub setupDefaultOptions
     $CONFIG{ 'make_fs_xfs' }      = 'mkfs.xfs -f';
     $CONFIG{ 'make_fs_reiserfs' } = 'mkfs.reiserfs -f -q';
     $CONFIG{ 'make_fs_btrfs' }    = 'mkfs.btrfs';
+    $CONFIG{ 'make_fs_vfat' }    = 'mkfs.vfat';
+    $CONFIG{ 'make_fs_esp' }    = 'mkfs.vfat';
+    $CONFIG{ 'make_fs_gpt' }    = 'sgdisk -n 1:0:0 -c 1:XenHVM-ESP -t 1:ef00 ';
 
     #
     #  Flags to pass to "mount" to mount our image.
@@ -1447,6 +1450,7 @@ sub setupDefaultOptions
     $CONFIG{ 'mount_fs_xfs' }      = '-t xfs';
     $CONFIG{ 'mount_fs_reiserfs' } = '-t reiserfs';
     $CONFIG{ 'mount_fs_btrfs' }    = '-t btrfs';
+    $CONFIG{ 'mount_fs_vfat' }    = '-t vfat';
 
     #
     #  Network options.
@@ -1911,7 +1915,7 @@ sub checkArguments
 
     #
     #  Lucid and probably all later Ubuntus, too, don't work without pygrub.
-    #  However, if pvgrub is selected, use that.
+    #  However, if pvgrub2 is selected, use that.
     #
     if ( !defined( $CONFIG{ 'pvgrub' } ) &&  !defined( $CONFIG{ 'pygrub' } ) && $DIST{ $CONFIG{ 'dist' } } =~ /pvgrub/ )
     {
@@ -3664,6 +3668,16 @@ sub createFilesystem
         exit 127;
     }
 
+    # Save the loop device used for the image so we can do the full GPT+ESP
+    my $loop = $image;
+    if ( $fs eq 'esp' )
+    {
+        createFilesystem($image, 'gpt');
+        $loop = readCommand("losetup --show -f $image", \%CONFIG);
+        runCommand("blockdev --rereadpt $loop", \%CONFIG);
+        $image = $loop . "p1";
+    }
+
     unless ( $CONFIG{ 'dontformat' } ) {
         #
         #  OK we have the command and the filesystem.  Create it.
@@ -3674,6 +3688,11 @@ sub createFilesystem
 
         runCommand($command, \%CONFIG);
         logprint("Done\n");
+    }
+    # remove the loop device (for now)
+    if ( $fs eq 'esp' )
+    {
+        runCommand("losetup -d $loop", \%CONFIG);
     }
 }
 
@@ -3731,6 +3750,14 @@ sub mountImage
             my $mount_cmd;
             my $mount_type = $CONFIG{ 'mount_fs_' . $partition->{ 'type' } };
 
+            if ( $partition->{ 'type' } eq 'esp' )
+            {
+                # pull out the embedded image in the GPT-ESP
+                $loop = readCommand("losetup --show -f $image", \%CONFIG);
+                runCommand("blockdev --rereadpt $loop", \%CONFIG);
+                $image = $loop . "p1";
+            }
+
             #
             #  LVM partition
             #
@@ -3747,6 +3774,10 @@ sub mountImage
                 $mount_cmd = "mount $mount_type $image $mountpoint";
             }
             elsif ( $CONFIG{ 'zpool' } )
+            {
+                $mount_cmd = "mount $mount_type $image $mountpoint";
+            }
+            elsif ( $partition->{ 'type' } eq 'esp' )
             {
                 $mount_cmd = "mount $mount_type $image $mountpoint";
             }

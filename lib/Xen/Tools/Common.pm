@@ -259,6 +259,54 @@ sub runCommand ($$;$)
 
 }
 
+=head2 readCommand
+
+=begin doc
+
+  A utility method to read a system command.  We will capture the return
+ value and exit if the command files.
+
+  The stdout of the command is returned
+
+=end doc
+
+=cut
+
+sub readCommand ($$;$)
+{
+    local $| = 1;
+    my ($cmd, $CONFIG, $fail_ok) = (@_);
+
+    #
+    #  Set a local if we don't have one.
+    #
+    $ENV{ 'LC_ALL' } = "C" unless ( $ENV{ 'LC_ALL' } );
+
+    #
+    #  Header.
+    #
+    if ($CONFIG->{ 'verbose' }) {
+        logprint_with_config("Executing : $cmd\n", $CONFIG);
+    }
+
+    my $result = do {
+        local $/ = undef;
+        my $rcopen = open my $fh, "-|", $cmd;
+        if (!defined($rcopen)) {
+            logprint_with_config("Starting command '$cmd' failed: $!\n", $CONFIG);
+            unless ($fail_ok) {
+                logprint_with_config("Aborting\n", $CONFIG);
+                print "See /var/log/xen-tools/".$CONFIG->{'hostname'}.".log for details\n";
+                $CONFIG->{'FAIL'} = 1;
+                exit 127;
+            }
+        }
+        <$fh>;
+    };
+
+    return ($result);
+}
+
 =head2 setupAdminUsers (xen-shell helper)
 
 =begin doc
