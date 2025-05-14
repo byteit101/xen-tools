@@ -1400,7 +1400,8 @@ sub setupDefaultOptions
     $CONFIG{ 'ipfile' }        = '/etc/xen-tools/ips.txt';
     $CONFIG{ 'output' }        = '/etc/xen';
     $CONFIG{ 'extension' }     = '.cfg';
-    $CONFIG{ 'type' }          = 'pvh';   # Arno: as per man xl.cfg
+    $CONFIG{ 'type' }          = 'pvh';
+    $CONFIG{ 'firmware' }      = 'bios'; # Default to BIOS if using HVM
 
     #
     #  Installation method defaults to "debootstrap" using
@@ -1546,10 +1547,14 @@ sub checkOption
         vlan => {
             check   => qr/^([1-9][0-9]{0,2}|10[01][0-9]|102[0-4])$/i,
             message => "must be a number between 1 and 1024.\n",
-        }, # Arno
+        },
         guestType => {
-            check   => qr/^(pv|pvh|hvm)$/,    # man xl.cfg
+            check   => qr/^(pv|pvh|hvm)$/,
             message => "must be 'pv', 'pvh' or 'hvm'.\n",
+        },
+        firmware => {
+            check   => sub { -e $_[0] or $_[0] =~ qr/^(bios|uefi)$/ }
+            message => "must be 'bios', 'uefi' or a path to OVMF.\n",
         },
     );
 
@@ -1589,7 +1594,8 @@ sub checkOption
         hash_method   => 'hashMethod',
         apt_proxy     => 'uri',
         vlan          => 'vlan',
-        type          => 'guestType', # Arno
+        type          => 'guestType',
+        firmware      => 'firmware',
     );
 
     # If given option does not exists in optionsTypes,
@@ -1747,7 +1753,8 @@ sub parseCommandLineArguments
             "extension:s",  \&checkOption,
             "dontformat",   \&checkOption,
             "lvm_thin=s",   \$CONFIG{ 'lvm_thin' },
-            "type:s",       \&checkOption, # Arno
+            "type:s",       \&checkOption,
+            "firmware:s",   \&checkOption,
 
             # Help options
             "debug!",     \$CONFIG{ 'debug' },
@@ -1922,6 +1929,25 @@ sub checkArguments
     }
     if (  !defined( $CONFIG{ 'pygrub' } )) {
         $CONFIG{ 'pygrub' } = 0;
+    }
+
+    if ( $CONFIG{ 'firmware' } ne 'bios' && $CONFIG{ 'type' } ne 'hvm' )
+    {
+        logprint("UEFI firmware require HVM machines!\n");
+        $CONFIG{'FAIL'} = 1;
+        exit 127;
+    }
+    if ( defined($CONFIG{ 'grub' }) && $CONFIG{ 'firmware' } ne 'bios' )
+    {
+        logprint("Cannot use *grub with UEFI!\n");
+        $CONFIG{'FAIL'} = 1;
+        exit 127;
+    }
+    if ( defined($CONFIG{ 'kernel' }) && $CONFIG{ 'firmware' } ne 'bios' )
+    {
+        logprint("Cannot use direct kernel boot with UEFI!\n");
+        $CONFIG{'FAIL'} = 1;
+        exit 127;
     }
 
     #
@@ -2805,7 +2831,11 @@ sub showSummary
         logprint("Max mem size   :  $CONFIG{'maxmem'}\n");
     }
 
-    if ( exists(  $CONFIG{ 'pvgrub' } ) &&
+    if ( $CONFIG{ 'type' } eq 'hvm' && $CONFIG{ 'type' } ne 'bios')
+    {
+        logprint("Firmware     :  UEFI\n");
+    }
+    elsif ( exists(  $CONFIG{ 'pvgrub' } ) &&
          $CONFIG{ 'pvgrub' } ) {
         logprint("Bootloader     :  pvgrub2\n");
     } elsif ( exists(  $CONFIG{ 'pygrub' } ) &&
@@ -2815,6 +2845,10 @@ sub showSummary
         if ( defined( $CONFIG{ 'kernel' } ) && length( $CONFIG{ 'kernel' } ) )
         {
             logprint("Kernel path    :  $CONFIG{'kernel'}\n");
+        }
+        elsif ( $CONFIG{ 'type' } eq 'hvm' )
+        {
+            logprint("Firmware     :  BIOS\n");
         }
 
         if ( defined( $CONFIG{ 'modules' } ) && length( $CONFIG{ 'modules' } ) )

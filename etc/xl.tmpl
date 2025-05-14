@@ -28,7 +28,16 @@
   }
 }
 {
-  if ( $pvgrub )
+  if ( $type eq 'hvm' && $firmware ne 'bios')
+  {
+    $OUT .= "firmware = 'uefi'\n";
+    if ($firmware ne 'uefi')
+    {
+      $OUT .= "system_firmware = '$firmware'\n";
+    }
+    $OUT .= "serial = ['pty']\n";
+  }
+  elsif ( $pvgrub )
   {
     $OUT .= "kernel = '$pvgrub_path'\n";
   } elsif ( $pygrub ) {
