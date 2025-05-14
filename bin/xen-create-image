@@ -92,6 +92,9 @@ and EVMS EXAMPLE.
                 'xfs' or 'btrfs'. (Note: pygrub *DOES NOT* support
                 xfs)
 
+   --firmware=bios|uefi|ovmf-path
+                Specify the HVM machine firmware. Default is bios.
+
    --genpass=1  Generate a random root password (default, set to 0 to
                 turn off)
 
@@ -1285,6 +1288,22 @@ EOF
         unless ( -f $CONFIG{ 'pvgrub_path' } )
         {
             logprint( "The pvgrub binary was not found. Install grub-xen-host.\nAborting\n\n" );
+            $CONFIG{'FAIL'} = 1;
+            exit 127;
+        }
+    }
+
+    #
+    #  Check that all required utilities are installed
+    #
+    my @required =
+      qw(blkid);
+
+    foreach my $bin (@required)
+    {
+        if ( !defined( which($bin) ) )
+        {
+            logprint( "The utility '$bin' was not found.\nAborting\n\n" );
             $CONFIG{'FAIL'} = 1;
             exit 127;
         }
