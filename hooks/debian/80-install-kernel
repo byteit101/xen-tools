@@ -92,7 +92,7 @@ else
         installDebianPackage ${prefix} $KERNEL_PKG
     else
         logMessage Package $KERNEL_PKG is not available
-        logMessage pygrub or pvgrub2 set, but kernel could not be installed
+        logMessage pygrub or grub2-xen set, but kernel could not be installed
         logMessage Script $0 failed
         exit 1
     fi

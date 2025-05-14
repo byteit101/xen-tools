@@ -28,7 +28,7 @@ BYTEIT101 CHANGES!!!!!!!!!!!!!!!!!!!!!!!!!!1
 
 * Rename xm.tmpl to xl.tmpl and use more modern settings.
 * Use UUIDs for fstab.
-* Add PVGrub2 support.
+* Add PVGrub2/grub2-xen support.
 * Add HVM UEFI support.
 
 Other Changes

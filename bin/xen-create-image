@@ -177,7 +177,7 @@ and EVMS EXAMPLE.
 
    --(no)pygrub DomU should (not) be booted using pygrub.
 
-   --(no)pvgrub DomU should (not) be booted using pvgrub2.
+   --(no)grub2  DomU should (not) be booted using grub2-xen/pvgrub2.
 
    --role=role  Run the specified role script(s) post-install.  Role
                 scripts are discussed later in this manpage.  Can be
@@ -1262,7 +1262,7 @@ EOF
     }
 
     # 
-    # Determine the correct PVGrub2 kernel, and check it's path
+    # Determine the correct grub2-pv kernel, and check it's path
     # 
     if (  exists(  $CONFIG{ 'pvgrub' } ) &&
          $CONFIG{ 'pvgrub' } )
@@ -1277,7 +1277,7 @@ EOF
         else {
             print <<EOF;
 
-  You've requested PVGrub2 on HVM. This isn't supported
+  You've requested GRUB2-xen on HVM. This isn't supported, use GRUB2-efi instead
 
   Aborting.
 EOF
@@ -1287,7 +1287,7 @@ EOF
         
         unless ( -f $CONFIG{ 'pvgrub_path' } )
         {
-            logprint( "The pvgrub2 binary was not found. Install grub-xen-host.\nAborting\n\n" );
+            logprint( "The grub2-xen binary was not found. Install grub-xen-host.\nAborting\n\n" );
             $CONFIG{'FAIL'} = 1;
             exit 127;
         }
@@ -1737,7 +1737,7 @@ sub parseCommandLineArguments
             "install=i",    \&checkOption,
             "hooks=i",      \&checkOption,
             "pygrub!",      \$CONFIG{ 'pygrub' },
-            "pvgrub!",      \$CONFIG{ 'pvgrub' },
+            "grub2!",       \$CONFIG{ 'pvgrub' },
             "passwd!",      \$CONFIG{ 'passwd' },
             "genpass=i",    \&checkOption,
             "genpass-len=i",\&checkOption,
@@ -1935,12 +1935,6 @@ sub checkArguments
         $CONFIG{ 'pygrub' } = 0;
     }
 
-    if ( $CONFIG{ 'firmware' } ne 'bios' && $CONFIG{ 'type' } ne 'hvm' )
-    {
-        logprint("UEFI firmware require HVM machines!\n");
-        $CONFIG{'FAIL'} = 1;
-        exit 127;
-    }
     if ( defined($CONFIG{ 'grub' }) && $CONFIG{ 'firmware' } ne 'bios' )
     {
         logprint("Cannot use *grub with UEFI!\n");
@@ -2841,7 +2835,7 @@ sub showSummary
     }
     elsif ( exists(  $CONFIG{ 'pvgrub' } ) &&
          $CONFIG{ 'pvgrub' } ) {
-        logprint("Bootloader     :  pvgrub2\n");
+        logprint("Bootloader     :  grub2-xen\n");
     } elsif ( exists(  $CONFIG{ 'pygrub' } ) &&
          $CONFIG{ 'pygrub' } ) {
         logprint("Bootloader     :  pygrub\n");
