@@ -1261,42 +1261,10 @@ EOF
         }
     }
 
-    # 
-    # Determine the correct grub2-pv kernel, and check it's path
-    # 
-    if (  exists(  $CONFIG{ 'pvgrub' } ) &&
-         $CONFIG{ 'pvgrub' } )
-    {
-        if ( $CONFIG { 'type' } eq 'pvh' ) {
-            $CONFIG{ 'pvgrub_path' } = '/usr/lib/grub-xen/grub-i386-xen_pvh.bin';
-        }
-        elsif ( $CONFIG { 'type' } eq 'pv' ) {
-            # Yes, we assume you are running 64-bit Xen
-            $CONFIG{ 'pvgrub_path' } = '/usr/lib/grub-xen/grub-x86_64-xen.bin';
-        }
-        else {
-            print <<EOF;
-
-  You've requested GRUB2-xen on HVM. This isn't supported, use GRUB2-efi instead
-
-  Aborting.
-EOF
-            $CONFIG{'FAIL'} = 1;
-            exit 127;
-        }
-        
-        unless ( -f $CONFIG{ 'pvgrub_path' } )
-        {
-            logprint( "The grub2-xen binary was not found. Install grub-xen-host.\nAborting\n\n" );
-            $CONFIG{'FAIL'} = 1;
-            exit 127;
-        }
-    }
-
     #
     #  Check that all required utilities are installed
     #
-    my @required =
+    @required =
       qw(blkid);
 
     foreach my $bin (@required)
@@ -1557,7 +1525,7 @@ sub checkOption
             message => "must be 'pv', 'pvh' or 'hvm'.\n",
         },
         firmware => {
-            check   => sub { -e $_[0] or $_[0] =~ qr/^(bios|uefi)$/ }
+            check   => sub { -e $_[0] or $_[0] =~ qr/^(bios|uefi)$/ },
             message => "must be 'bios', 'uefi' or a path to OVMF.\n",
         },
     );
@@ -1946,6 +1914,38 @@ sub checkArguments
         logprint("Cannot use direct kernel boot with UEFI!\n");
         $CONFIG{'FAIL'} = 1;
         exit 127;
+    }
+
+
+    # 
+    # Determine the correct grub2-pv kernel, and check its path
+    # 
+    if ( $CONFIG{ 'pvgrub' } )
+    {
+        if ( $CONFIG { 'type' } eq 'pvh' ) {
+            $CONFIG{ 'pvgrub_path' } = '/usr/lib/grub-xen/grub-i386-xen_pvh.bin';
+        }
+        elsif ( $CONFIG { 'type' } eq 'pv' ) {
+            # Yes, we assume you are running 64-bit Xen
+            $CONFIG{ 'pvgrub_path' } = '/usr/lib/grub-xen/grub-x86_64-xen.bin';
+        }
+        else {
+            print <<EOF;
+
+  You've requested GRUB2-xen on HVM. This isn't supported, use GRUB2-efi instead
+
+  Aborting.
+EOF
+            $CONFIG{'FAIL'} = 1;
+            exit 127;
+        }
+        
+        unless ( -f $CONFIG{ 'pvgrub_path' } )
+        {
+            logprint( "The grub2-xen binary was not found. Install grub-xen-host.\nAborting\n\n" );
+            $CONFIG{'FAIL'} = 1;
+            exit 127;
+        }
     }
 
     #
@@ -3747,7 +3747,7 @@ sub mountImage
             if ( $partition->{ 'type' } eq 'esp' )
             {
                 # pull out the embedded image in the GPT-ESP
-                $loop = readCommand("losetup --show -f $image", \%CONFIG);
+                my $loop = readCommand("losetup --show -f $image", \%CONFIG);
                 runCommand("blockdev --rereadpt $loop", \%CONFIG);
                 $image = $loop . "p1";
             }
