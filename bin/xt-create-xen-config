@@ -218,6 +218,12 @@ sub parseCommandLineArguments
     pod2usage(1) if $HELP;
     pod2usage( -verbose => 2 ) if $MANUAL;
 
+    if (defined($ENV{"CREATE_XEN_CONFIG_DUMP"}))
+    {
+        foreach my $key (sort keys %ENV) {
+            print "$key=$ENV{$key}\n";
+        }
+    }
 
     if ($VERSION)
     {

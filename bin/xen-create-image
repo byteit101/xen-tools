@@ -1885,12 +1885,26 @@ sub checkArguments
     #  Lucid and probably all later Ubuntus, too, don't work without pygrub.
     #  However, if pvgrub2 is selected, use that.
     #
-    if ( !defined( $CONFIG{ 'pvgrub' } ) &&  !defined( $CONFIG{ 'pygrub' } ) && $DIST{ $CONFIG{ 'dist' } } =~ /pvgrub/ )
+    if ( defined( $CONFIG{ 'pvgrub' } ) )
+    {
+        if ($CONFIG{ 'pvgrub' })
+        {
+            $CONFIG{ 'grub' } = 2;
+        }
+    }
+    elsif ( defined( $CONFIG{ 'pygrub' } ) )
+    {
+        if ($CONFIG{ 'pygrub' })
+        {
+            $CONFIG{ 'grub' } = 1;
+        }
+    }
+    elsif ( $CONFIG{ 'firmware' } eq 'bios' and $DIST{ $CONFIG{ 'dist' } } =~ /pvgrub/ )
     {
         $CONFIG{ 'pvgrub' } = 1;
-        $CONFIG{ 'grub' } = 2;
+        $CONFIG{ 'grub' } = 1;
     }
-    elsif ( $DIST{ $CONFIG{ 'dist' } } =~ /pygrub/ )
+    elsif ( $CONFIG{ 'firmware' } eq 'bios' and $DIST{ $CONFIG{ 'dist' } } =~ /pygrub/ )
     {
         $CONFIG{ 'pygrub' } = 1;
         $CONFIG{ 'grub' } = 1;
@@ -1906,12 +1920,6 @@ sub checkArguments
     if ( defined($CONFIG{ 'grub' }) && $CONFIG{ 'firmware' } ne 'bios' )
     {
         logprint("Cannot use *grub with UEFI!\n");
-        $CONFIG{'FAIL'} = 1;
-        exit 127;
-    }
-    if ( defined($CONFIG{ 'kernel' }) && $CONFIG{ 'firmware' } ne 'bios' )
-    {
-        logprint("Cannot use direct kernel boot with UEFI!\n");
         $CONFIG{'FAIL'} = 1;
         exit 127;
     }
@@ -2829,9 +2837,9 @@ sub showSummary
         logprint("Max mem size   :  $CONFIG{'maxmem'}\n");
     }
 
-    if ( $CONFIG{ 'type' } eq 'hvm' && $CONFIG{ 'type' } ne 'bios')
+    if ( $CONFIG{ 'firmware' } ne 'bios')
     {
-        logprint("Firmware     :  UEFI\n");
+        logprint("Firmware       :  UEFI\n");
     }
     elsif ( exists(  $CONFIG{ 'pvgrub' } ) &&
          $CONFIG{ 'pvgrub' } ) {
@@ -2846,7 +2854,7 @@ sub showSummary
         }
         elsif ( $CONFIG{ 'type' } eq 'hvm' )
         {
-            logprint("Firmware     :  BIOS\n");
+            logprint("Firmware       :  BIOS\n");
         }
 
         if ( defined( $CONFIG{ 'modules' } ) && length( $CONFIG{ 'modules' } ) )
@@ -3666,9 +3674,23 @@ sub createFilesystem
     my $loop = $image;
     if ( $fs eq 'esp' )
     {
+        #
+        #  Check that all required utilities are installed
+        #
+        my @required = qw(losetup partx);
+
+        foreach my $bin (@required)
+        {
+            if ( !defined( which($bin) ) )
+            {
+                logprint( "The utility '$bin' was not found.\nAborting\n\n" );
+                $CONFIG{'FAIL'} = 1;
+                exit 127;
+            }
+        }
         createFilesystem($image, 'gpt');
         $loop = readCommand("losetup --show -f $image", \%CONFIG);
-        runCommand("blockdev --rereadpt $loop", \%CONFIG);
+        runCommand("partx -u $loop", \%CONFIG);
         $image = $loop . "p1";
     }
 
@@ -3748,7 +3770,7 @@ sub mountImage
             {
                 # pull out the embedded image in the GPT-ESP
                 my $loop = readCommand("losetup --show -f $image", \%CONFIG);
-                runCommand("blockdev --rereadpt $loop", \%CONFIG);
+                runCommand("partx -u $loop", \%CONFIG);
                 $image = $loop . "p1";
             }
 
@@ -3777,7 +3799,8 @@ sub mountImage
             }
             else
             {
-                $mount_cmd = "mount $mount_type -o loop $image $mountpoint";
+                $image = readCommand("losetup --show -f $image", \%CONFIG);
+                $mount_cmd = "mount $mount_type $image $mountpoint";
             }
             runCommand($mount_cmd, \%CONFIG);
         }

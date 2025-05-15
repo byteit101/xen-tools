@@ -30,6 +30,17 @@ BYTEIT101 CHANGES!!!!!!!!!!!!!!!!!!!!!!!!!!1
 * Use UUIDs for fstab.
 * Add PVGrub2/grub2-xen support.
 * Add HVM UEFI support.
+* Add UEFI-ESP partition support.
+
+Testing the new changes:
+
+| Type | Pygrub    | grub2-xen | dkb       | uefi                | bios                      |
+| ---- | --------- | --------- | --------- | ------------------- | ------------------------- |
+| PVH  | nosystemd | nosystemd | nosystemd | ?                   | N/A                       |
+| PV   | Yes       | nosystemd | yes       | N/A                 | N/A                       |
+| HVM  | N/A       | N/A       | yes       | Generates config ok | only implicitly supported |
+
+"nosystemd" means that quiet or other flags prevent seeing systemd messages by default
 
 Other Changes
 -------------

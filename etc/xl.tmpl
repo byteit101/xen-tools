@@ -6,42 +6,41 @@
 #
 #  Kernel + memory size
 #
-{ if ( ( $kernel ) && ( !$pygrub) && ( !$pvgrub) )
+{ if ( ( $kernel ) && ( !$pygrub) && ( !$pvgrub) && ( $firmware eq 'bios') )
   {
-    $OUT .= "kernel = '$kernel'\n";
+    $OUT .= "kernel = '$kernel'";
   }
 }
-{ if ( ( $initrd ) && ( !$pygrub) && ( !$pvgrub) )
+{ if ( ( $initrd ) && ( !$pygrub) && ( !$pvgrub) && ( $firmware eq 'bios') )
   {
     $OUT.= "ramdisk = '$initrd'";
   }
 }
-{ if ( ( $kernel ) && ( !$pygrub) && ( !$pvgrub) )
+{ if ( ( $kernel ) && ( !$pygrub) && ( !$pvgrub) && ( $firmware eq 'bios') )
   {
     for ( my $i = $#PARTITIONS; $i >= 0 ; $i-- )
     {
       if ( $PARTITIONS[$i]{'mountpoint'} eq '/' )
       {
-          $OUT .= "cmdline = '/dev/$PARTITIONS[$i]{'vdev'} ro'\n";
+          $OUT .= "cmdline = 'root=/dev/$PARTITIONS[$i]{'vdev'} ro console=".( $serial_device)."'";
       }
     }
   }
 }
-{
-  if ( $type eq 'hvm' && $firmware ne 'bios')
+{ if ( $firmware ne 'bios' )
   {
     $OUT .= "firmware = 'uefi'\n";
-    if ($firmware ne 'uefi')
+    if ( $firmware ne 'uefi' )
     {
       $OUT .= "system_firmware = '$firmware'\n";
     }
-    $OUT .= "serial = ['pty']\n";
-  }
-  elsif ( $pvgrub )
-  {
-    $OUT .= "kernel = '$pvgrub_path'\n";
+    $OUT .= "serial = ['pty']";
+  } elsif ( $pvgrub ) {
+    $OUT .= "kernel = '$pvgrub_path'";
   } elsif ( $pygrub ) {
-    $OUT .= "bootloader = 'pygrub'\n";
+    $OUT .= "bootloader = 'pygrub'";
+  } else { 
+    # this else must be here, or else the template will print a 0
   }
 }
 vcpus = '{$vcpus}'

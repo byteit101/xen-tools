@@ -23,9 +23,11 @@ use vars qw(@EXPORT_OK @EXPORT);
 
 use English;
 use File::Which;
+# If not available, use =~ s/\A\s+|\s+\z//urg
+use builtin qw(trim);
 
 @EXPORT = qw(readConfigurationFile xenRunning runCommand setupAdminUsers
-             findXenToolstack
+             findXenToolstack readCommand
              logprint_with_config logonly_with_config fail_with_config);
 
 =head1 FUNCTIONS
@@ -304,7 +306,7 @@ sub readCommand ($$;$)
         <$fh>;
     };
 
-    return ($result);
+    return (trim($result));
 }
 
 =head2 setupAdminUsers (xen-shell helper)

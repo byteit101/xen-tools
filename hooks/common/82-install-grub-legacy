@@ -35,12 +35,33 @@ if [ "${pvgrub}" = "1" ]; then
     #
     installDebianPackage ${prefix} grub-xen
 
+    # PV(H) should always have this set unless using UEFI, but either way it's needed for update-grub to not break
+    echo 'GRUB_TERMINAL=console' > ${prefix}/etc/default/grub.d/xen-guest-serial.cfg
+    echo 'GRUB_DISABLE_OS_PROBER=true' > ${prefix}/etc/default/grub.d/xen-guest-disable-prober.cfg
+
+    # Grub2 < 2.12 doesn't like generating in chroots. Patch that change out
+    if grep -q "We can't cope with devices loop-mounted from files here." ${prefix}/etc/grub.d/10_linux; then
+        sed -i 's/*) exit 0 ;;/*) ;;/' ${prefix}/etc/grub.d/10_linux
+    fi
+
+    # set the serial device
+    sed -i 's/GRUB_CMDLINE_LINUX=""/GRUB_CMDLINE_LINUX="console='$serial_device'"/' ${prefix}/etc/default/grub
+    # For reasons unknown, PVH shows systemd status by default, but PVH doesn't.
+    # setting 'systemd.show_status=true quiet' may be handy to normalize them
+
+    echo "Generating grub.cfg, this will cause several errors to be printed if you are using loop devices..."
     chroot ${prefix} /usr/sbin/update-grub2
+    result=$?
+    if [ "${firmware}" != 'bios' ]; then
+        rm ${prefix}/etc/default/grub.d/xen-guest-serial.cfg
+    fi
     umount ${prefix}/proc
     umount ${prefix}/dev
-
+    if [ $result != 0 ]; then
+        exit $result
+    fi
 else
-    logMessage "pvgrub not set, skipping grub2 installation"
+    logMessage "grub2 not set, skipping pvgrub installation"
 
     if [ "${pygrub}" = "1" ]; then
 
