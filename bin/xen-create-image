@@ -899,6 +899,11 @@ my $PASSWORD = '';
 #
 my $default_genpass_len = 23;
 
+#
+#  Recordkeeping for loopback devices that we create
+#
+my %LOOPBACK_SET = ();
+
 
 # Minor helpers for reducing code duplication
 sub fail     ($) { fail_with_config($_[0], \%CONFIG); }
@@ -3742,6 +3747,7 @@ sub createFilesystem
         }
         createFilesystem($image, 'gpt');
         $loop = readCommand("losetup --show -f $image", \%CONFIG);
+        $LOOPBACK_SET{$loop} = ();
         runCommand("partx -u $loop", \%CONFIG);
         $image = $loop . "p1";
     }
@@ -3761,6 +3767,7 @@ sub createFilesystem
     if ( $fs eq 'esp' )
     {
         runCommand("losetup -d $loop", \%CONFIG);
+        delete($LOOPBACK_SET{$loop});
     }
 }
 
@@ -3822,6 +3829,7 @@ sub mountImage
             {
                 # pull out the embedded image in the GPT-ESP
                 my $loop = readCommand("losetup --show -f $image", \%CONFIG);
+                $LOOPBACK_SET{$loop} = ();
                 runCommand("partx -u $loop", \%CONFIG);
                 $image = $loop . "p1";
                 $mount_type = $CONFIG{ 'mount_fs_vfat'  }
@@ -3854,6 +3862,7 @@ sub mountImage
             {
                 # This seems to help with grub installations vs the mount -o loop method
                 $image = readCommand("losetup --show -f $image", \%CONFIG);
+                $LOOPBACK_SET{$image} = ();
                 $mount_cmd = "mount $mount_type $image $mountpoint";
             }
             runCommand($mount_cmd, \%CONFIG);
@@ -4564,6 +4573,12 @@ sub unMountImage
     {
         $CONFIG{ 'verbose' } && print "Unmounting : $path\n";
         runCommand("umount $path", \%CONFIG, $fail_ok);
+    }
+
+    foreach my $loopdev (keys %LOOPBACK_SET)
+    {
+        runCommand("losetup -d $loopdev", \%CONFIG);
+        delete($LOOPBACK_SET{$loopdev});
     }
 
     $MOUNT_POINT = undef;
