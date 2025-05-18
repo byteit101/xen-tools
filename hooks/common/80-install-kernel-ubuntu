@@ -26,7 +26,7 @@ fi
 
 logMessage Script $0 starting
 
-if [ "${firmware}" != "bios" ] || [ "${pygrub}" = "1" ] || [ "${pvgrub}" = "1"  ]; then
+if [ "x${firmware}" != "x" ] || [ "${pygrub}" = "1" ] || [ "${pvgrub}" = "1"  ]; then
 
 #
 # The type of kernel that we will be installing

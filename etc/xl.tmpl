@@ -6,17 +6,17 @@
 #
 #  Kernel + memory size
 #
-{ if ( ( $kernel ) && ( !$pygrub) && ( !$pvgrub) && ( $firmware eq 'bios' or  ($firmware eq 'uefi' and $type eq 'pvh' ) ) )
+{ if ( ( $kernel ) && ( !$pygrub) && ( !$pvgrub) && ( $firmware eq '' or  ($firmware eq 'uefi' and $type eq 'pvh' ) ) )
   {
     $OUT .= "kernel = '$kernel'";
   }
 }
-{ if ( ( $initrd ) && ( !$pygrub) && ( !$pvgrub) && ( $firmware eq 'bios') )
+{ if ( ( $initrd ) && ( !$pygrub) && ( !$pvgrub) && ( $firmware eq '') )
   {
     $OUT.= "ramdisk = '$initrd'";
   }
 }
-{ if ( ( $kernel ) && ( !$pygrub) && ( !$pvgrub) && ( $firmware eq 'bios') )
+{ if ( ( $kernel ) && ( !$pygrub) && ( !$pvgrub) && ( $firmware eq '') )
   {
     for ( my $i = $#PARTITIONS; $i >= 0 ; $i-- )
     {
@@ -27,7 +27,7 @@
     }
   }
 }
-{ if ( $firmware ne 'bios' and $type ne 'pvh'  )
+{ if ( $firmware ne '' and $type ne 'pvh'  )
   {
     $OUT .= "firmware = 'uefi'\n";
     if ( $firmware ne 'uefi' )

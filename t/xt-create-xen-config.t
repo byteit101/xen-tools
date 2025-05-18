@@ -83,8 +83,8 @@ testOutputContains( "bootloader = 'pygrub'",
 noMentionOf( "kernel",
              memory => 128, ips => '192.168.1.1', dir => '/tmp' , pygrub => 1 );
 
-testOutputContains( "cmdline = '/dev/xvda ro'",
-                    memory => 128, dhcp => 1, lvm => 'skx-vg0', kernel => '/vmlinuz',
+testOutputContains( "cmdline = 'root=/dev/xvda ro console=hvc0'",
+                    memory => 128, dhcp => 1, lvm => 'skx-vg0', kernel => '/vmlinuz', serial_device => 'hvc0',
                     PARTITION1 => 'disk:4Gb:ext3:/:noatime,nodiratime,errors=remount-ro:phy:/dev/skx-vg0/disk',
                     PARTITION2 => 'swap:128Mb:swap:::phy:/dev/skx-vg0/swap' );
 

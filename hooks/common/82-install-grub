@@ -26,9 +26,9 @@ fi
 #
 logMessage Script $0 starting
 
-if [ "${firmware}" != "bios" ] || [ "${pvgrub}" = "1" ]; then
+if [ "x${firmware}" != "x" ] || [ "${pvgrub}" = "1" ]; then
     grubtarget=xen
-    if [ "${firmware}" != "bios" ]; then
+    if [ "x${firmware}" != "x" ]; then
         grubtarget=efi
         logMessage "UEFI set, using grub2-efi"
     else

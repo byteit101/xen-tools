@@ -1368,7 +1368,7 @@ sub setupDefaultOptions
     $CONFIG{ 'output' }        = '/etc/xen';
     $CONFIG{ 'extension' }     = '.cfg';
     $CONFIG{ 'type' }          = 'pvh';
-    $CONFIG{ 'firmware' }      = 'bios'; # Default to BIOS if using HVM
+    $CONFIG{ 'firmware' }      = ''; # Default to BIOS if using HVM
 
     #
     #  Installation method defaults to "debootstrap" using
@@ -1898,12 +1898,12 @@ sub checkArguments
             $CONFIG{ 'grub' } = 1;
         }
     }
-    elsif ( $CONFIG{ 'firmware' } eq 'bios' and $DIST{ $CONFIG{ 'dist' } } =~ /pvgrub/ )
+    elsif ( $CONFIG{ 'firmware' } eq '' and $DIST{ $CONFIG{ 'dist' } } =~ /pvgrub/ )
     {
         $CONFIG{ 'pvgrub' } = 1;
         $CONFIG{ 'grub' } = 1;
     }
-    elsif ( $CONFIG{ 'firmware' } eq 'bios' and $DIST{ $CONFIG{ 'dist' } } =~ /pygrub/ )
+    elsif ( $CONFIG{ 'firmware' } eq '' and $DIST{ $CONFIG{ 'dist' } } =~ /pygrub/ )
     {
         $CONFIG{ 'pygrub' } = 1;
         $CONFIG{ 'grub' } = 1;
@@ -1916,7 +1916,15 @@ sub checkArguments
         $CONFIG{ 'pygrub' } = 0;
     }
 
-    if ( defined($CONFIG{ 'grub' }) && $CONFIG{ 'firmware' } ne 'bios' )
+    # Because there are too many different flags for boot options,
+    # we will use the HVM default of "bios" as if '' is bios, and anything
+    # else as if it was UEFI
+    if ( $CONFIG{ 'firmware' } eq 'bios')
+    {
+        $CONFIG{ 'firmware' } = '';
+    }
+
+    if ( defined($CONFIG{ 'grub' }) && $CONFIG{ 'firmware' } ne '' )
     {
         logprint("Cannot use *grub with UEFI!\n");
         $CONFIG{'FAIL'} = 1;
@@ -1958,7 +1966,7 @@ EOF
     #
     # Determine the correct OVMF path if we are doing PVH
     #
-    if ( $CONFIG{ 'type' } eq 'pvh' and $CONFIG{ 'firmware' } ne 'bios')
+    if ( $CONFIG{ 'type' } eq 'pvh' and $CONFIG{ 'firmware' } ne '')
     {
         if ( $CONFIG { 'firmware' } eq 'uefi' )
         {
@@ -2881,7 +2889,7 @@ sub showSummary
         logprint("Max mem size   :  $CONFIG{'maxmem'}\n");
     }
 
-    if ( $CONFIG{ 'firmware' } ne 'bios')
+    if ( $CONFIG{ 'firmware' } ne '')
     {
         logprint("Firmware       :  UEFI\n");
     }

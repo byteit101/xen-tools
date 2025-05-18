@@ -31,7 +31,7 @@ fi
 #
 logMessage Script $0 starting
 
-if [ "${firmware}" != "bios" ] || [ "${pygrub}" = "1" ] || [ "${pvgrub}" = "1" ]; then
+if [ "x${firmware}" != "x" ] || [ "${pygrub}" = "1" ] || [ "${pvgrub}" = "1" ]; then
     logMessage "bootloader set, skipping module install"
 else
 #
