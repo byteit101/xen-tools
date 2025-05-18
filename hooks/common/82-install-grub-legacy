@@ -26,16 +26,25 @@ fi
 #
 logMessage Script $0 starting
 
-if [ "${pvgrub}" = "1" ]; then
+if [ "${firmware}" != "bios" ] || [ "${pvgrub}" = "1" ]; then
+    grubtarget=xen
+    if [ "${firmware}" != "bios" ]; then
+        grubtarget=efi
+        logMessage "UEFI set, using grub2-efi"
+    else
+        logMessage "grub2 set, using grub2-xen"
+    fi
 
     mount -o bind /proc ${prefix}/proc
     mount -o bind /dev ${prefix}/dev
+    mount -o bind /dev/pts ${prefix}/dev/pts
+    mount -o bind /sys ${prefix}/sys
     #
     #  Install the grub2 xen binaries
     #
-    installDebianPackage ${prefix} grub-xen
+    installDebianPackage ${prefix} grub-${grubtarget}
 
-    # PV(H) should always have this set unless using UEFI, but either way it's needed for update-grub to not break
+    # PV(H) should always have this set unless using HVM, but either way it's needed for update-grub to not break
     echo 'GRUB_TERMINAL=console' > ${prefix}/etc/default/grub.d/xen-guest-serial.cfg
     echo 'GRUB_DISABLE_OS_PROBER=true' > ${prefix}/etc/default/grub.d/xen-guest-disable-prober.cfg
 
@@ -49,44 +58,46 @@ if [ "${pvgrub}" = "1" ]; then
     # For reasons unknown, PVH shows systemd status by default, but PVH doesn't.
     # setting 'systemd.show_status=true quiet' may be handy to normalize them
 
-    echo "Generating grub.cfg, this will cause several errors to be printed if you are using loop devices..."
+    # Put the EFI bootloader at EFI/BOOT/BOOTX64.efi so we don't have to worry about OVMF settings. 
+    # Grub-install defaults to EFI/$distro/grubx64.efi without --removable
+    if [ "${grubtarget}" = "efi" ]; then
+        chroot ${prefix} /usr/sbin/grub-install --target=x86_64-efi --removable
+    fi
+
+    echo "Generating grub.cfg, this may cause several errors to be printed if you are using loop devices..."
     chroot ${prefix} /usr/sbin/update-grub2
     result=$?
-    if [ "${firmware}" != 'bios' ]; then
-        rm ${prefix}/etc/default/grub.d/xen-guest-serial.cfg
-    fi
-    umount ${prefix}/proc
+    umount ${prefix}/sys
+    umount ${prefix}/dev/pts
     umount ${prefix}/dev
+    umount ${prefix}/proc
     if [ $result != 0 ]; then
         exit $result
     fi
-else
-    logMessage "grub2 not set, skipping pvgrub installation"
+elif [ "${pygrub}" = "1" ]; then
+    logMessage "pygrub set, using pygrub + grub-legacy"
 
-    if [ "${pygrub}" = "1" ]; then
-
-        #
-        #  Install the grub 0.9x package ("grub-legacy" on Debian, "grub" on Ubuntu)
-        #
-        if chroot ${prefix} /usr/bin/apt-cache show grub-legacy 2>/dev/null | egrep -qi 'GRand Unified Bootloader.*Legacy'; then
-            installDebianPackage ${prefix} grub-legacy
-        else
-            installDebianPackage ${prefix} grub
-        fi
-
-        if [ ! -e ${prefix}/boot/grub/default ]; then
-            echo default > ${prefix}/boot/grub/default
-        fi
-        mount -o bind /proc ${prefix}/proc
-        mount -o bind /dev ${prefix}/dev
-        chroot ${prefix} /usr/sbin/update-grub
-        umount ${prefix}/proc
-        umount ${prefix}/dev
-
+    #
+    #  Install the grub 0.9x package ("grub-legacy" on Debian, "grub" on Ubuntu)
+    #
+    if chroot ${prefix} /usr/bin/apt-cache show grub-legacy 2>/dev/null | egrep -qi 'GRand Unified Bootloader.*Legacy'; then
+        installDebianPackage ${prefix} grub-legacy
     else
-        logMessage "pygrub not set, skipping grub-legacy installation"
-    fi # if pygrub
-fi # if pvgrub
+        installDebianPackage ${prefix} grub
+    fi
+
+    if [ ! -e ${prefix}/boot/grub/default ]; then
+        echo default > ${prefix}/boot/grub/default
+    fi
+    mount -o bind /proc ${prefix}/proc
+    mount -o bind /dev ${prefix}/dev
+    chroot ${prefix} /usr/sbin/update-grub
+    umount ${prefix}/proc
+    umount ${prefix}/dev
+
+else
+    logMessage "No bootloader set, skipping grub2 and grub-legacy installations"
+fi
 
 #
 #  Log our finish

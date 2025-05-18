@@ -33,14 +33,13 @@ BYTEIT101 CHANGES!!!!!!!!!!!!!!!!!!!!!!!!!!1
 * Add UEFI-ESP partition support.
 
 Testing the new changes:
+| Type | Pygrub        | grub2-xen     | dkb           | uefi          | bios                 |
+| ---- | ------------- | ------------- | ------------- | ------------- | -------------------- |
+| PVH  | Yes (no logs) | Yes (no logs) | Yes (no logs) | ?             | N/A                  |
+| PV   | Yes           | Yes (no logs) | Yes           | N/A           | N/A                  |
+| HVM  | N/A           | N/A           | Yes           | Yes (no logs) | Implicitly supported |
 
-| Type | Pygrub    | grub2-xen | dkb       | uefi                | bios                      |
-| ---- | --------- | --------- | --------- | ------------------- | ------------------------- |
-| PVH  | nosystemd | nosystemd | nosystemd | ?                   | N/A                       |
-| PV   | Yes       | nosystemd | yes       | N/A                 | N/A                       |
-| HVM  | N/A       | N/A       | yes       | Generates config ok | only implicitly supported |
-
-"nosystemd" means that quiet or other flags prevent seeing systemd messages by default
+"no logs" means that quiet or other flags prevent seeing systemd messages by default
 
 Other Changes
 -------------

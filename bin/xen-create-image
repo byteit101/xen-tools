@@ -1305,7 +1305,6 @@ sub setupDefaultOptions
     $CONFIG{ 'kernel' }  = '';
     $CONFIG{ 'modules' } = '';
     $CONFIG{ 'initrd' }  = '';
-    $CONFIG{ 'serial_device' } = 'hvc0';
     $CONFIG{ 'disk_device' }   = 'xvda';
 
     #
@@ -1995,6 +1994,14 @@ EOF
     if ( $CONFIG{ 'dist' } eq 'fedora-core4' )
     {
         $CONFIG{ 'dist' } = 'stentz';
+    }
+
+    #
+    #  Serial device default changes on hvm
+    #
+    if (  !defined($CONFIG{ 'serial_option'}) )
+    {
+        $CONFIG{ 'serial_device' } = ($CONFIG{ 'type' } eq 'hvm') ? 'ttyS0' : 'hvc0';
     }
 
     #
@@ -3772,6 +3779,7 @@ sub mountImage
                 my $loop = readCommand("losetup --show -f $image", \%CONFIG);
                 runCommand("partx -u $loop", \%CONFIG);
                 $image = $loop . "p1";
+                $mount_type = $CONFIG{ 'mount_fs_vfat'  }
             }
 
             #
@@ -3799,6 +3807,7 @@ sub mountImage
             }
             else
             {
+                # This seems to help with grub installations vs the mount -o loop method
                 $image = readCommand("losetup --show -f $image", \%CONFIG);
                 $mount_cmd = "mount $mount_type $image $mountpoint";
             }
