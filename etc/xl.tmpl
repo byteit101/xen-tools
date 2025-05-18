@@ -6,7 +6,7 @@
 #
 #  Kernel + memory size
 #
-{ if ( ( $kernel ) && ( !$pygrub) && ( !$pvgrub) && ( $firmware eq 'bios') )
+{ if ( ( $kernel ) && ( !$pygrub) && ( !$pvgrub) && ( $firmware eq 'bios' or  ($firmware eq 'uefi' and $type eq 'pvh' ) ) )
   {
     $OUT .= "kernel = '$kernel'";
   }
@@ -27,7 +27,7 @@
     }
   }
 }
-{ if ( $firmware ne 'bios' )
+{ if ( $firmware ne 'bios' and $type ne 'pvh'  )
   {
     $OUT .= "firmware = 'uefi'\n";
     if ( $firmware ne 'uefi' )

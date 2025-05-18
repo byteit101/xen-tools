@@ -1956,6 +1956,43 @@ EOF
     }
 
     #
+    # Determine the correct OVMF path if we are doing PVH
+    #
+    if ( $CONFIG{ 'type' } eq 'pvh' and $CONFIG{ 'firmware' } ne 'bios')
+    {
+        if ( $CONFIG { 'firmware' } eq 'uefi' )
+        {
+            # We must scan for the correct path.
+            my @path_options = qw(/usr/share/ovmf/XEN_OVMF.fd /usr/share/ovmf/OVMF.fd);
+
+            foreach my $ovmf (@path_options)
+            {
+                if ( -f $ovmf )
+                {
+                    $CONFIG { 'firmware' } = $ovmf;
+                    last;
+                }
+            }
+            if ( $CONFIG { 'firmware' } eq 'uefi' )
+            {
+                logprint( "UEFI firmware was requested with PVH, but OVMF not found.\nAborting\n\n" );
+                $CONFIG{'FAIL'} = 1;
+                exit 127;
+            }
+        }
+
+        unless ( -f $CONFIG { 'firmware' } )
+        {
+            logprint( "Custom UEFI firmware was requested, but OVMF not found.\nAborting\n\n" );
+            $CONFIG{'FAIL'} = 1;
+            exit 127;
+        }
+
+        $CONFIG { 'kernel' } = $CONFIG { 'firmware' };
+        $CONFIG { 'firmware' } = 'uefi';
+    }
+
+    #
     #  Sarge amd64 needs different default mirror
     #
     if ( $CONFIG{ 'dist' } =~ /sarge/ and
