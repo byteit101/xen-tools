@@ -71,7 +71,7 @@ noMentionOf( "hda",
 
 
 #
-#  Boot options:
+#  Boot options: pvgrub, pygrub, dkb, uefi (pvh & HVM)
 #
 testOutputContains( "kernel = 'my-pvh.bin'",
                     memory => 128, dhcp => 1, dir => '/tmp', pvgrub => 1, pvgrub_path => 'my-pvh.bin');
@@ -87,6 +87,35 @@ testOutputContains( "cmdline = 'root=/dev/xvda ro console=hvc0'",
                     memory => 128, dhcp => 1, lvm => 'skx-vg0', kernel => '/vmlinuz', serial_device => 'hvc0',
                     PARTITION1 => 'disk:4Gb:ext3:/:noatime,nodiratime,errors=remount-ro:phy:/dev/skx-vg0/disk',
                     PARTITION2 => 'swap:128Mb:swap:::phy:/dev/skx-vg0/swap' );
+
+testOutputContains( "firmware = 'uefi'",
+                    memory => 128, dhcp => 1, dir => '/tmp', firmware => 'uefi', type => 'hvm');
+testOutputContains( "firmware = 'uefi'",
+                    memory => 128, dhcp => 1, dir => '/tmp', firmware => '/my-uefi', type => 'hvm');
+noMentionOf( "kernel",
+                    memory => 128, dhcp => 1, dir => '/tmp', firmware => '/my-uefi', type => 'hvm');
+noMentionOf( "kernel",
+                    memory => 128, dhcp => 1, dir => '/tmp', firmware => 'uefi', type => 'hvm');
+testOutputContains( "system_firmware = '/my-uefi'",
+                    memory => 128, dhcp => 1, dir => '/tmp', firmware => '/my-uefi', type => 'hvm');
+
+testOutputContains( "kernel = 'uefi-kernel'",
+                    memory => 128, dhcp => 1, dir => '/tmp', firmware => 'uefi', type => 'pvh', kernel=>"uefi-kernel");
+noMentionOf( "firmware",
+                    memory => 128, dhcp => 1, dir => '/tmp', firmware => 'uefi', type => 'pvh', kernel=>"uefi-kernel");
+
+
+#
+#  Machine types
+#
+testOutputContains( "type = 'pvh'",
+                    memory => 128, dhcp => 1, dir => '/tmp', type => 'pvh');
+
+testOutputContains( "type = 'pv'",
+                    memory => 128, dhcp => 1, dir => '/tmp', type => 'pv');
+
+testOutputContains( "type = 'hvm'",
+                    memory => 128, dhcp => 1, dir => '/tmp', type => 'hvm');
 
 #
 #  IDE based systems
